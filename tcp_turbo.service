@@ -1,0 +1,15 @@
+[Unit]
+Description=TcpTurbo Extreme TCP Optimizer Service
+After=network.target
+
+[Service]
+Type=forking
+ExecStart=/usr/local/bin/tcp-turbo start
+ExecStop=/usr/local/bin/tcp-turbo stop
+PIDFile=/var/run/tcp_turbo.pid
+Restart=on-failure
+User=root
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_SYS_ADMIN
+
+[Install]
+WantedBy=multi-user.target
