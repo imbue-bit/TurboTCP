@@ -5,6 +5,7 @@
 #include <vector>
 #include <iomanip>
 #include <sstream>
+#include <unistd.h>
 #include "Daemon.hpp"
 #include "Common.hpp"
 #include "IpcClient.hpp"
