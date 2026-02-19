@@ -12,6 +12,9 @@
 #include <sstream>
 #include <iostream>
 #include <chrono>
+#include <thread>
+
+extern std::string send_command(const std::string& cmd);
 
 static SystemTuner g_tuner;
 static StatsCollector g_stats;
@@ -28,7 +31,6 @@ std::string Daemon::handleRequest(const std::string& req) {
         return "OK|All Optimizations Disabled & Relay Stopped";
     } 
     else if (req.find("RELAY_START:") == 0) {
-        // format: RELAY_START:1.2.3.4:80
         try {
             std::string payload = req.substr(12);
             size_t del = payload.find(':');
@@ -54,7 +56,6 @@ std::string Daemon::handleRequest(const std::string& req) {
         g_relay.getStats(tx, rx, conns);
         
         std::stringstream ss;
-        // format: STATS|in,out,retrans,rate,relay_tx,relay_rx,active_conns
         ss << "STATS|" << stats.in_segs << "," << stats.out_segs << "," 
            << stats.retrans_segs << "," << stats.retrans_rate << ","
            << tx << "," << rx << "," << conns;
@@ -72,7 +73,7 @@ std::string Daemon::handleRequest(const std::string& req) {
 }
 
 void Daemon::runService() {
-    IpcServer server(handleRequest);
+    IpcServer server(Daemon::handleRequest);
     server.start();
 
     while (true) {
@@ -82,7 +83,7 @@ void Daemon::runService() {
 
 void Daemon::start() {
     if (access(PID_FILE, F_OK) == 0) {
-        std::cerr << "TcpTurbo daemon is already running. (PID file exists)\n";
+        std::cerr << "TcpTurbo daemon is already running.\n";
         return;
     }
 
@@ -91,8 +92,6 @@ void Daemon::start() {
     if (pid > 0) exit(EXIT_SUCCESS); 
 
     if (setsid() < 0) exit(EXIT_FAILURE);
-
-    // 忽略 SIGHUP 防止终端关闭导致进程退出
     signal(SIGHUP, SIG_IGN);
 
     pid = fork();
@@ -100,7 +99,7 @@ void Daemon::start() {
     if (pid > 0) exit(EXIT_SUCCESS);
 
     umask(0);
-    chdir("/");
+    if (chdir("/") < 0) { /* handle error to /dev/null */ }
 
     std::ofstream pid_file(PID_FILE);
     pid_file << getpid();
@@ -114,15 +113,14 @@ void Daemon::start() {
 }
 
 void Daemon::stop() {
-    std::ifstream pid_file(PID_FILE);
+    std::ifstream pid_file_in(PID_FILE);
     int pid;
-    if (pid_file >> pid) {
-        // 先通过 IPC 发送停止指令尝试优雅的退出
+    if (pid_file_in >> pid) {
         send_command("STOP");
         kill(pid, SIGTERM);
         unlink(PID_FILE);
         unlink(SOCKET_PATH);
-        std::cout << "TcpTurbo daemon (PID " << pid << ") has been stopped.\n";
+        std::cout << "TcpTurbo daemon stopped.\n";
     } else {
         std::cout << "Daemon is not running.\n";
     }
