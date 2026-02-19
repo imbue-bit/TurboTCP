@@ -1,0 +1,99 @@
+===============================================================================
+  _________  ____     _________  __  ______  ____  ____ 
+ /_  __/ __ \/ __ \   /_  __/ / / / / __ \/ __ )/ __ \
+  / / / /_/ / /_/ /    / / / / / / / /_/ / __  / / / /
+ / / / ____/ ____/    / / / /_/ / / _, _/ /_/ / /_/ / 
+/_/ /_/   /_/        /_/  \____/ /_/ |_/_____/\____/  
+                                                       
+===============================================================================
+
+[ 1. DESCRIPTION ]
+
+    TcpTurbo is a high-performance system daemon designed to accelerate
+    TCP throughput and reduce latency on Linux-based gateways and servers.
+    It combines aggressive kernel-level sysctl tuning with a zero-copy
+    TCP relay service utilizing the splice(2) system call.
+
+    The project is intended for users who need to squeeze every bit of
+    performance out of high-latency or high-loss network environments.
+
+
+[ 2. KEY FEATURES ]
+
+    - KERNEL TUNING: Automated application of Google BBR congestion control,
+      FQ queuing discipline, and expanded TCP window scaling.
+    - ZERO-COPY RELAY: High-efficiency port forwarding using Linux splice
+      technology, bypassing user-space memory copying.
+    - LIVE DASHBOARD: Real-time monitoring of retransmission rates, 
+      segment flow, and throughput via IPC.
+    - DAEMONIZATION: Runs as a background service with Systemd integration.
+    - BUSY_POLL: Low-latency socket polling for high-performance I/O.
+
+
+[ 3. SYSTEM REQUIREMENTS ]
+
+    - OS: Linux (Kernel 4.9 or higher for BBR support)
+    - COMPILER: GCC 7.0+ or Clang 5.0+ (C++17 Support Required)
+    - BUILD TOOLS: CMake 3.10+, GNU Make
+    - PRIVILEGES: Root access required for sysctl and CAP_NET_ADMIN
+
+
+[ 4. BUILD & INSTALLATION ]
+
+    The project includes an automated build system.
+
+    1. Build the binaries:
+       $ chmod +x build.sh
+       $ ./build.sh
+
+    2. Install to system:
+       $ sudo ./build.sh
+
+    This will install the binary to /usr/local/bin and register the 
+    'tcp_turbo' service with Systemd.
+
+
+[ 5. COMMAND LINE INTERFACE ]
+
+    USAGE: tcp-turbo <command> [options]
+
+    COMMANDS:
+      start             Launch the background daemon.
+      stop              Terminate daemon and revert kernel changes.
+      enable            Apply extreme sysctl optimizations.
+      disable           Revert to system default network settings.
+      relay <ip> <port> Start zero-copy relay to target destination.
+      dashboard         Enter the live monitoring interface.
+      custom "k=v,..."  Apply user-defined sysctl parameters.
+
+
+[ 6. TECHNICAL INTERNALS ]
+
+    - IPC: Communication between CLI and Daemon via Unix Domain Sockets
+      located at /tmp/tcp_turbo.sock.
+    - RELAY ENGINE: Uses epoll(7) in Edge-Triggered (EPOLLET) mode.
+    - DATA PLANE: Splice(2) is used to move data between the client 
+      socket and the server socket via a kernel pipe buffer, achieving 
+      near-wire speed with minimal CPU overhead.
+    - STATS: Parsed directly from /proc/net/snmp for kernel-level
+      accuracy regarding TCP retransmissions.
+
+
+[ 7. DIRECTORY STRUCTURE ]
+
+    include/        - Header files (Class definitions)
+    src/            - Implementation files
+    build/          - Compilation artifacts
+    tcp_turbo.serv  - Systemd unit configuration
+    build.sh        - Automation script
+
+
+[ 8. DISCLAIMER ]
+
+    TcpTurbo modifies critical kernel network parameters. While these 
+    settings are optimized for high-speed throughput, they may not be 
+    suitable for all network environments. Use with caution on 
+    production systems.
+
+Optimizing the path, one segment at a time.
+EOF
