@@ -4,6 +4,7 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include "Common.hpp"
 
 class TcpRelay {
 public:
